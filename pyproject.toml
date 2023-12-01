@@ -1,0 +1,65 @@
+[project]
+name = "jean-travail"
+version = "0.0.1"
+authors = [
+  {name = "Jean-Loutre", email ="jean-loutre@gmx.com"}
+]
+description = "Pomodoro application to woRK MORE YOU LAZY FUCK."
+license = {text = "WTFPL"}
+readme = "README.md"
+dependencies = [
+  "click",
+  "appdirs"
+]
+
+[project.optional-dependencies]
+dev = [
+  "nox",
+]
+
+[project.scripts]
+jean-travail = "jtravail:cli"
+
+[build-system]
+requires = ["setuptools>=45"]
+
+[tool.setuptools]
+packages = ["jtravail"]
+
+[tool.setuptools.package-data]
+jtravail = ["py.typed"]
+
+[tool.pylint.messages_control]
+max-line-length = 80
+disable = [
+  "fixme",
+  "invalid-name",
+  "missing-docstring",
+  "too-few-public-methods",
+  "duplicate-code"
+]
+
+[tool.isort]
+profile = "black"
+src_paths = ["jtravail", "noxfile.py"]
+
+[tool.mypy]
+mypy_path=".mypy_stubs"
+strict = true
+strict_optional = true
+
+[tool.django-stubs]
+django_settings_module = "tests.settings"
+
+[tool.pylint]
+max-line-length = 110
+
+[tool.pytest.ini_options]
+python_files = ["tests/**"]
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_also = [
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
