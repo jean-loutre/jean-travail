@@ -32,3 +32,15 @@ def test_start() -> None:
         assert status == pomodoro.Status.POMODORO
         assert remaining is not None
         assert remaining.total_seconds() == -1 * 60
+
+
+def test_stop() -> None:
+    pomodoro.start()
+    pomodoro.stop()
+    (status, remaining) = pomodoro.status()
+
+    assert status == pomodoro.Status.STOPPED
+    assert remaining is None
+
+    pomodoro.stop()
+    (status, remaining) = pomodoro.status()

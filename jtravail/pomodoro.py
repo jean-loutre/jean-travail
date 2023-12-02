@@ -36,6 +36,13 @@ class _Pomodoro:
             remaining = timedelta(minutes=25) - elapsed
         return self._status, remaining
 
+    def stop(self) -> None:
+        try:
+            self._state_path.unlink()
+        except FileNotFoundError:
+            pass
+        self.refresh()
+
     def refresh(self) -> None:
         if not self._state_path.is_file():
             self._status = Status.STOPPED
@@ -61,6 +68,7 @@ class _Pomodoro:
 
 _POMODORO = _Pomodoro()
 
+refresh = _POMODORO.refresh
 start = _POMODORO.start
 status = _POMODORO.status
-refresh = _POMODORO.refresh
+stop = _POMODORO.stop
