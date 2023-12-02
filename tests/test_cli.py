@@ -11,7 +11,7 @@ def test_start() -> None:
     result = runner.invoke(main, ["start"])
 
     assert result.exit_code == 0
-    assert result.output == "Pomodoro started\n"
+    assert result.output == "Working: 24:59\n"
 
 
 def test_pause() -> None:
@@ -19,7 +19,7 @@ def test_pause() -> None:
     result = runner.invoke(main, ["pause"])
 
     assert result.exit_code == 0
-    assert result.output == "Pomodoro paused\n"
+    assert result.output == "Paused: 04:59\n"
 
 
 def test_status() -> None:
@@ -29,7 +29,7 @@ def test_status() -> None:
         result = runner.invoke(main, ["status"])
 
         assert result.exit_code == 0
-        assert result.output == "Stopped\n"
+        assert result.output == "Stopped: 00:00\n"
 
         result = runner.invoke(main, ["start"])
 
@@ -37,14 +37,14 @@ def test_status() -> None:
         result = runner.invoke(main, ["status"])
 
         assert result.exit_code == 0
-        assert result.output == "Pomodoro : 01:00\n"
+        assert result.output == "Working: 01:00\n"
 
         result = runner.invoke(main, ["pause"])
         frozen_datetime.tick(delta=timedelta(seconds=4 * 60))
         result = runner.invoke(main, ["status"])
 
         assert result.exit_code == 0
-        assert result.output == "Pause : 01:00\n"
+        assert result.output == "Paused: 01:00\n"
 
 
 def test_stop() -> None:
@@ -52,4 +52,4 @@ def test_stop() -> None:
     result = runner.invoke(main, ["stop"])
 
     assert result.exit_code == 0
-    assert result.output == "Pomodoro stopped\n"
+    assert result.output == "Stopped: 00:00\n"
