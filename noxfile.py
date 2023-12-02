@@ -40,7 +40,13 @@ def flake8(session: Session) -> None:
 def mypy(session: Session) -> None:
     """Run Mypy"""
     session.install(
-        "-e", ".", "mypy", "types-appdirs", "types-click", "types-freezegun", "pyfakefs"
+        "-e",
+        ".",
+        "mypy",
+        "types-appdirs",
+        "types-click",
+        "types-freezegun",
+        "pyfakefs",
     )
     session.run("mypy", *locations)
 
