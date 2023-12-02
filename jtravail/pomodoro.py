@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from enum import Enum
 from json import dumps as json_dumps
 from json import loads as json_loads
 from pathlib import Path
@@ -11,10 +10,30 @@ _APP_AUTHOR = "ottorg"
 _CACHE_DIR = Path(user_cache_dir(_APP_NAME, _APP_AUTHOR))
 
 
-class Status(str, Enum):
+class Status:
     STOPPED = "stopped"
     POMODORO = "pomodoro"
     PAUSED = "paused"
+
+    def __init__(self, state: str, remaining: timedelta | None) -> None:
+        self._state = state
+        self._remaining = remaining
+
+    @property
+    def stopped(self) -> bool:
+        return self._state == self.STOPPED
+
+    @property
+    def pomodoro(self) -> bool:
+        return self._state == self.POMODORO
+
+    @property
+    def paused(self) -> bool:
+        return self._state == self.PAUSED
+
+    @property
+    def remaining(self) -> timedelta | None:
+        return self._remaining
 
 
 class _Pomodoro:
@@ -37,7 +56,7 @@ class _Pomodoro:
         self._start_time = datetime.now()
         self._save()
 
-    def status(self) -> tuple[Status, timedelta | None]:
+    def status(self) -> Status:
         remaining = None
         if self._start_time is not None:
             if self._status == Status.POMODORO:
@@ -46,7 +65,7 @@ class _Pomodoro:
                 duration = self._pause_duration
             elapsed = datetime.now() - self._start_time
             remaining = duration - elapsed
-        return self._status, remaining
+        return Status(self._status, remaining)
 
     def stop(self) -> None:
         try:
