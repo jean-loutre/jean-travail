@@ -85,6 +85,9 @@ class Pomodoro:
         self._save()
 
     def pause(self) -> None:
+        if self._status == self.PAUSED:
+            return
+
         self._push_log()
         self._status = self.PAUSED
         self._start_time = datetime.now()

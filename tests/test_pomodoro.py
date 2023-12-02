@@ -28,15 +28,25 @@ def test_start(pomodoro: Pomodoro) -> None:
 def test_pause(pomodoro: Pomodoro) -> None:
     with freeze_time(datetime.now()) as frozen_datetime:
         pomodoro.pause()
-
         assert pomodoro.paused
         assert pomodoro.remaining.total_seconds() == 5 * 60
 
         frozen_datetime.tick(delta=timedelta(seconds=60))
 
         assert pomodoro.paused
-        assert pomodoro.remaining is not None
         assert pomodoro.remaining.total_seconds() == 4 * 60
+
+        pomodoro.pause()
+
+        # Calling pause during pause doesn't reset the counter
+        assert pomodoro.paused
+        assert pomodoro.remaining.total_seconds() == 4 * 60
+
+        pomodoro.start()
+        pomodoro.pause()
+
+        assert pomodoro.paused
+        assert pomodoro.remaining.total_seconds() == 5 * 60
 
 
 def test_save_stat_on_pause(pomodoro: Pomodoro) -> None:
