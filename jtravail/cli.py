@@ -1,8 +1,9 @@
+from datetime import timedelta
 from functools import wraps
 from gettext import gettext as _
 from typing import Callable
 
-from click import Context, echo, group, pass_context, pass_obj
+from click import Context, echo, group, option, pass_context, pass_obj
 
 from jtravail.pomodoro import Pomodoro
 
@@ -30,9 +31,16 @@ def print_status(command: Callable[[Pomodoro], None]) -> Callable[[Pomodoro], No
 
 
 @group()
+@option(
+    "-w",
+    "--work-duration",
+    default=25 * 60,
+    show_default=True,
+    help=_("Work session duration in seconds"),
+)
 @pass_context
-def main(context: Context) -> None:
-    context.obj = Pomodoro()
+def main(context: Context, work_duration: int) -> None:
+    context.obj = Pomodoro(work_duration=timedelta(seconds=work_duration))
 
 
 @main.command()

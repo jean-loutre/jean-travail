@@ -83,3 +83,16 @@ def test_stop() -> None:
 
         assert result.exit_code == 0
         assert result.output == "Stopped: 00:00\n"
+
+
+def test_work_duration_parameter() -> None:
+    with freeze_time(datetime.now()):
+        runner = CliRunner()
+        result = runner.invoke(main, ["-w", str(30 * 60), "next"])
+
+        assert result.exit_code == 0
+        assert result.output == "Working: 30:00\n"
+
+        result = runner.invoke(main, ["-w", str(30 * 60), "status"])
+        assert result.exit_code == 0
+        assert result.output == "Working: 30:00\n"

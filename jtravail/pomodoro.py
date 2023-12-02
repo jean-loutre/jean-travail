@@ -51,13 +51,13 @@ _TRANSITIONS: dict[str, str] = {
 
 
 class Pomodoro:
-    def __init__(self) -> None:
+    def __init__(self, work_duration: timedelta) -> None:
         self._state_path = _CACHE_DIR / "state"
         self._log_path = _DATA_DIR / "log.db"
 
         self._status = _STOPPED
         self._start_time: datetime | None = None
-        self._pomodoro_duration: timedelta = timedelta(minutes=25)
+        self._work_duration = work_duration
         self._pause_duration: timedelta = timedelta(minutes=5)
         self.refresh()
         pass
@@ -80,9 +80,7 @@ class Pomodoro:
             return timedelta(0)
 
         duration = (
-            self._pomodoro_duration
-            if self._status == _WORKING
-            else self._pause_duration
+            self._work_duration if self._status == _WORKING else self._pause_duration
         )
         return duration - (datetime.now() - self._start_time)
 
