@@ -38,15 +38,8 @@ def main(context: Context) -> None:
 @main.command()
 @pass_obj
 @print_status
-def start(pomodoro: Pomodoro) -> None:
-    pomodoro.start()
-
-
-@main.command()
-@pass_obj
-@print_status
-def pause(pomodoro: Pomodoro) -> None:
-    pomodoro.pause()
+def next(pomodoro: Pomodoro) -> None:
+    pomodoro.next()
 
 
 @main.command()
