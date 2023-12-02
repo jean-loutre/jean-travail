@@ -39,65 +39,56 @@ class LogEntry:
         return self._line.split(sep=";", maxsplit=3)
 
 
-class Status:
+class Pomodoro:
     STOPPED = "stopped"
-    POMODORO = "pomodoro"
+    RUNNING = "running"
     PAUSED = "paused"
 
-    def __init__(self, state: str, remaining: timedelta | None) -> None:
-        self._state = state
-        self._remaining = remaining
-
-    @property
-    def stopped(self) -> bool:
-        return self._state == self.STOPPED
-
-    @property
-    def pomodoro(self) -> bool:
-        return self._state == self.POMODORO
-
-    @property
-    def paused(self) -> bool:
-        return self._state == self.PAUSED
-
-    @property
-    def remaining(self) -> timedelta | None:
-        return self._remaining
-
-
-class _Pomodoro:
     def __init__(self) -> None:
         self._state_path = _CACHE_DIR / "state"
         self._log_path = _DATA_DIR / "log.db"
 
-        self._status = Status.STOPPED
+        self._status = self.STOPPED
         self._start_time: datetime | None = None
         self._pomodoro_duration: timedelta = timedelta(minutes=25)
         self._pause_duration: timedelta = timedelta(minutes=5)
         self.refresh()
         pass
 
+    @property
+    def stopped(self) -> bool:
+        return self._status == self.STOPPED
+
+    @property
+    def running(self) -> bool:
+        return self._status == self.RUNNING
+
+    @property
+    def paused(self) -> bool:
+        return self._status == self.PAUSED
+
+    @property
+    def remaining(self) -> timedelta:
+        if self._start_time is None:
+            return timedelta(0)
+
+        duration = (
+            self._pomodoro_duration
+            if self._status == self.RUNNING
+            else self._pause_duration
+        )
+        return duration - (datetime.now() - self._start_time)
+
     def start(self) -> None:
-        self._status = Status.POMODORO
+        self._status = self.RUNNING
         self._start_time = datetime.now()
         self._save()
 
     def pause(self) -> None:
         self._push_log()
-        self._status = Status.PAUSED
+        self._status = self.PAUSED
         self._start_time = datetime.now()
         self._save()
-
-    def status(self) -> Status:
-        remaining = None
-        if self._start_time is not None:
-            if self._status == Status.POMODORO:
-                duration = self._pomodoro_duration
-            else:
-                duration = self._pause_duration
-            elapsed = datetime.now() - self._start_time
-            remaining = duration - elapsed
-        return Status(self._status, remaining)
 
     @contextmanager
     def get_log(self) -> Iterator[Iterable[LogEntry]]:
@@ -121,7 +112,7 @@ class _Pomodoro:
 
     def refresh(self) -> None:
         if not self._state_path.is_file():
-            self._status = Status.STOPPED
+            self._status = self.STOPPED
             self._start_time = None
         else:
             with self._state_path.open("r") as state_file:
@@ -133,7 +124,7 @@ class _Pomodoro:
                 )
 
     def _push_log(self) -> None:
-        if self._status not in [Status.POMODORO, Status.PAUSED]:
+        if self._status not in [self.RUNNING, self.PAUSED]:
             return
 
         if not self._log_path.exists():
@@ -154,13 +145,3 @@ class _Pomodoro:
         self._state_path.parent.mkdir(parents=True, exist_ok=True)
         with self._state_path.open("w") as state_file:
             state_file.write(json_dumps(data))
-
-
-_POMODORO = _Pomodoro()
-
-pause = _POMODORO.pause
-refresh = _POMODORO.refresh
-start = _POMODORO.start
-status = _POMODORO.status
-stop = _POMODORO.stop
-get_log = _POMODORO.get_log

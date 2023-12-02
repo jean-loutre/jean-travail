@@ -1,60 +1,55 @@
-from datetime import timedelta
-from unittest.mock import Mock, patch
+from datetime import datetime, timedelta
 
 from click.testing import CliRunner
+from freezegun import freeze_time
 
 from jtravail.cli import main
-from jtravail.pomodoro import Status
 
 
-@patch("jtravail.pomodoro.start")
-def test_start(mock_start: Mock) -> None:
+def test_start() -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["start"])
 
     assert result.exit_code == 0
-    assert mock_start.called_once()
     assert result.output == "Pomodoro started\n"
 
 
-@patch("jtravail.pomodoro.pause")
-def test_pause(mock_pause: Mock) -> None:
+def test_pause() -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["pause"])
 
     assert result.exit_code == 0
-    assert mock_pause.called_once()
     assert result.output == "Pomodoro paused\n"
 
 
-@patch("jtravail.pomodoro.status")
-def test_status(mock_status: Mock) -> None:
-    runner = CliRunner()
+def test_status() -> None:
+    with freeze_time(datetime.now()) as frozen_datetime:
+        runner = CliRunner()
 
-    mock_status.return_value = Status(Status.STOPPED, None)
-    result = runner.invoke(main, ["status"])
+        result = runner.invoke(main, ["status"])
 
-    assert result.exit_code == 0
-    assert result.output == "Stopped\n"
+        assert result.exit_code == 0
+        assert result.output == "Stopped\n"
 
-    mock_status.return_value = Status(Status.POMODORO, timedelta(seconds=65))
-    result = runner.invoke(main, ["status"])
+        result = runner.invoke(main, ["start"])
 
-    assert result.exit_code == 0
-    assert result.output == "Pomodoro : 01:05\n"
+        frozen_datetime.tick(delta=timedelta(seconds=24 * 60))
+        result = runner.invoke(main, ["status"])
 
-    mock_status.return_value = Status(Status.PAUSED, timedelta(seconds=65))
-    result = runner.invoke(main, ["status"])
+        assert result.exit_code == 0
+        assert result.output == "Pomodoro : 01:00\n"
 
-    assert result.exit_code == 0
-    assert result.output == "Pause : 01:05\n"
+        result = runner.invoke(main, ["pause"])
+        frozen_datetime.tick(delta=timedelta(seconds=4 * 60))
+        result = runner.invoke(main, ["status"])
+
+        assert result.exit_code == 0
+        assert result.output == "Pause : 01:00\n"
 
 
-@patch("jtravail.pomodoro.stop")
-def test_stop(mock_start: Mock) -> None:
+def test_stop() -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["stop"])
 
     assert result.exit_code == 0
-    assert mock_start.called_once()
     assert result.output == "Pomodoro stopped\n"

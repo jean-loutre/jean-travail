@@ -1,9 +1,11 @@
+from typing import Iterator
+
 from pyfakefs.fake_filesystem_unittest import Patcher
 from pytest import fixture
 
-from jtravail import pomodoro as _pomodoro
+from jtravail.pomodoro import Pomodoro
 
 
 @fixture(autouse=True)
-def pomodoro(fs: Patcher) -> None:
-    _pomodoro.refresh()
+def pomodoro(fs: Patcher) -> Iterator[Pomodoro]:
+    yield Pomodoro()
