@@ -13,7 +13,7 @@ def print_status(command: Callable[[Pomodoro], None]) -> Callable[[Pomodoro], No
         command(pomodoro)
         if pomodoro.stopped:
             status_name = _("Stopped")
-        elif pomodoro.running:
+        elif pomodoro.working:
             status_name = _("Working")
         elif pomodoro.paused:
             status_name = _("Paused")

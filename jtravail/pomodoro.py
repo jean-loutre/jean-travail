@@ -41,7 +41,7 @@ class LogEntry:
 
 class Pomodoro:
     STOPPED = "stopped"
-    RUNNING = "running"
+    WORKING = "working"
     PAUSED = "paused"
 
     def __init__(self) -> None:
@@ -60,8 +60,8 @@ class Pomodoro:
         return self._status == self.STOPPED
 
     @property
-    def running(self) -> bool:
-        return self._status == self.RUNNING
+    def working(self) -> bool:
+        return self._status == self.WORKING
 
     @property
     def paused(self) -> bool:
@@ -74,13 +74,13 @@ class Pomodoro:
 
         duration = (
             self._pomodoro_duration
-            if self._status == self.RUNNING
+            if self._status == self.WORKING
             else self._pause_duration
         )
         return duration - (datetime.now() - self._start_time)
 
     def start(self) -> None:
-        self._status = self.RUNNING
+        self._status = self.WORKING
         self._start_time = datetime.now()
         self._save()
 
@@ -124,7 +124,7 @@ class Pomodoro:
                 )
 
     def _push_log(self) -> None:
-        if self._status not in [self.RUNNING, self.PAUSED]:
+        if self._status not in [self.WORKING, self.PAUSED]:
             return
 
         if not self._log_path.exists():

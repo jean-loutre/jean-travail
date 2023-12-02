@@ -12,12 +12,12 @@ def test_start(pomodoro: Pomodoro) -> None:
     with freeze_time(datetime.now()) as frozen_datetime:
         pomodoro.start()
 
-        assert pomodoro.running
+        assert pomodoro.working
         assert pomodoro.remaining.total_seconds() == 25 * 60
 
         frozen_datetime.tick(delta=timedelta(seconds=60))
 
-        assert pomodoro.running
+        assert pomodoro.working
         assert pomodoro.remaining.total_seconds() == 24 * 60
 
         frozen_datetime.tick(delta=timedelta(seconds=25 * 60))
@@ -53,7 +53,7 @@ def test_save_stat_on_pause(pomodoro: Pomodoro) -> None:
             assert log[0].start == start_date
             assert log[0].end == start_date + delta
             assert log[0].duration == delta
-            assert log[0].type == pomodoro.RUNNING
+            assert log[0].type == pomodoro.WORKING
 
 
 def test_stop(pomodoro: Pomodoro) -> None:
