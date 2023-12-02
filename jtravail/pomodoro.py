@@ -16,7 +16,7 @@ class Status(str, Enum):
     POMODORO = "pomodoro"
 
 
-class Pomodoro:
+class _Pomodoro:
     def __init__(self) -> None:
         self._state_path = _CACHE_DIR / "state"
         self._status = Status.STOPPED
@@ -57,3 +57,10 @@ class Pomodoro:
         self._state_path.parent.mkdir(parents=True, exist_ok=True)
         with self._state_path.open("w") as state_file:
             state_file.write(json_dumps(data))
+
+
+_POMODORO = _Pomodoro()
+
+start = _POMODORO.start
+status = _POMODORO.status
+refresh = _POMODORO.refresh
