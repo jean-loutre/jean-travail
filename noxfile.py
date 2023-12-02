@@ -39,12 +39,16 @@ def flake8(session: Session) -> None:
 @session("lint", "checks")
 def mypy(session: Session) -> None:
     """Run Mypy"""
-    session.install("-e", ".", "mypy", "types-appdirs", "types-click")
+    session.install(
+        "-e", ".", "mypy", "types-appdirs", "types-click", "types-freezegun"
+    )
     session.run("mypy", *locations)
 
 
 @session("checks", "tests", python=["3.11"])
 def unit_tests(session: Session) -> None:
     """Run unit tests."""
-    session.install("-e", ".", "pytest", "pytest-cov", "pytest-datadir", "pyfakefs")
+    session.install(
+        "-e", ".", "pytest", "pytest-cov", "pytest-datadir", "pyfakefs", "freezegun"
+    )
     session.run("python", "-m", "pytest", "--cov=jtravail", "--cov-report=html")
