@@ -14,6 +14,7 @@ _CACHE_DIR = Path(user_cache_dir(_APP_NAME, _APP_AUTHOR))
 class Status(str, Enum):
     STOPPED = "stopped"
     POMODORO = "pomodoro"
+    PAUSED = "paused"
 
 
 class _Pomodoro:
@@ -21,6 +22,8 @@ class _Pomodoro:
         self._state_path = _CACHE_DIR / "state"
         self._status = Status.STOPPED
         self._start_time: datetime | None = None
+        self._pomodoro_duration: timedelta = timedelta(minutes=25)
+        self._pause_duration: timedelta = timedelta(minutes=5)
         self.refresh()
         pass
 
@@ -29,11 +32,20 @@ class _Pomodoro:
         self._start_time = datetime.now()
         self._save()
 
+    def pause(self) -> None:
+        self._status = Status.PAUSED
+        self._start_time = datetime.now()
+        self._save()
+
     def status(self) -> tuple[Status, timedelta | None]:
         remaining = None
         if self._start_time is not None:
+            if self._status == Status.POMODORO:
+                duration = self._pomodoro_duration
+            else:
+                duration = self._pause_duration
             elapsed = datetime.now() - self._start_time
-            remaining = timedelta(minutes=25) - elapsed
+            remaining = duration - elapsed
         return self._status, remaining
 
     def stop(self) -> None:
@@ -68,6 +80,7 @@ class _Pomodoro:
 
 _POMODORO = _Pomodoro()
 
+pause = _POMODORO.pause
 refresh = _POMODORO.refresh
 start = _POMODORO.start
 status = _POMODORO.status
