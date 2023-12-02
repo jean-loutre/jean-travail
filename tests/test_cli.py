@@ -32,3 +32,13 @@ def test_status(mock_status: Mock) -> None:
 
     assert result.exit_code == 0
     assert result.output == "Pomodoro : 01:05\n"
+
+
+@patch("jtravail.pomodoro.stop")
+def test_stop(mock_start: Mock) -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["stop"])
+
+    assert result.exit_code == 0
+    assert mock_start.called_once()
+    assert result.output == "Pomodoro stopped\n"

@@ -33,3 +33,10 @@ def status() -> int:
         )
 
     return 0
+
+
+@main.command()
+def stop() -> int:
+    pomodoro.stop()
+    echo(_("Pomodoro stopped"))
+    return 0
