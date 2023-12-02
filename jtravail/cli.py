@@ -18,6 +18,13 @@ def start() -> int:
 
 
 @main.command()
+def pause() -> int:
+    pomodoro.pause()
+    echo(_("Pomodoro paused"))
+    return 0
+
+
+@main.command()
 def status() -> int:
     (status, remaining) = pomodoro.status()
     if status is pomodoro.Status.STOPPED:
@@ -26,9 +33,10 @@ def status() -> int:
         assert remaining is not None
         minutes = int(remaining.total_seconds() / 60)
         seconds = abs(int(remaining.total_seconds() - 60 * minutes))
+        status = "Pomodoro" if status is pomodoro.Status.POMODORO else "Pause"
         echo(
-            _("Pomodoro : {minutes:02d}:{seconds:02d}").format(
-                minutes=minutes, seconds=seconds
+            _("{status} : {minutes:02d}:{seconds:02d}").format(
+                status=status, minutes=minutes, seconds=seconds
             )
         )
 
