@@ -20,7 +20,18 @@ def print_status(command: Callable[[Pomodoro], None]) -> Callable[[Pomodoro], No
         show_default="25",
         help=_("Work session duration in minutes"),
     )
-    def _wrapper(pomodoro: Pomodoro, work_duration: int | None = None) -> None:
+    @option(
+        "-p",
+        "--pause-duration",
+        type=int,
+        show_default="5",
+        help=_("Pause session duration in minutes"),
+    )
+    def _wrapper(
+        pomodoro: Pomodoro,
+        work_duration: int | None = None,
+        pause_duration: int | None = None,
+    ) -> None:
         command(pomodoro)
         if pomodoro.stopped:
             status_name = _("Stopped")
@@ -29,7 +40,9 @@ def print_status(command: Callable[[Pomodoro], None]) -> Callable[[Pomodoro], No
         elif pomodoro.paused:
             status_name = _("Paused")
 
-        remaining_time = pomodoro.get_remaining_time(work_duration=work_duration)
+        remaining_time = pomodoro.get_remaining_time(
+            work_duration=work_duration, pause_duration=pause_duration
+        )
         minutes = int(remaining_time.total_seconds() / 60)
         seconds = abs(int(remaining_time.total_seconds() - 60 * minutes))
         echo(

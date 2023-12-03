@@ -61,7 +61,6 @@ class Pomodoro:
 
         self._status = _STOPPED
         self._start_time: datetime | None = None
-        self._pause_duration: timedelta = timedelta(minutes=5)
         self.refresh()
         pass
 
@@ -77,18 +76,17 @@ class Pomodoro:
     def paused(self) -> bool:
         return self._status == _PAUSED
 
-    def get_remaining_time(self, work_duration: int | None = None) -> timedelta:
+    def get_remaining_time(
+        self, work_duration: int | None = None, pause_duration: int | None = None
+    ) -> timedelta:
         if self._start_time is None:
             return timedelta(0)
 
-        duration = (
-            timedelta(
-                minutes=work_duration or self._options.get("work_duration", int, 25)
-            )
-            if self._status == _WORKING
-            else self._pause_duration
-        )
-        return duration - (datetime.now() - self._start_time)
+        work_duration = work_duration or self._options.get("work_duration", int, 25)
+        pause_duration = pause_duration or self._options.get("pause_duration", int, 5)
+
+        duration = work_duration if self._status == _WORKING else pause_duration
+        return timedelta(minutes=duration) - (datetime.now() - self._start_time)
 
     def next(self) -> None:
         if self._status is not _STOPPED:

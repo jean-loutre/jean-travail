@@ -37,3 +37,22 @@ def test_work_duration_parameter(cli: Cli) -> None:
             cli("next")
             assert cli("status -w 50") == "Working: 50:00\n"
             assert cli("status --work-duration 50") == "Working: 50:00\n"
+
+
+def test_pause_duration_parameter(cli: Cli) -> None:
+    with cli.config(pause_duration="30"):
+        cli("next")
+        cli("next")
+        assert cli("status") == "Paused: 30:00\n"
+
+        with cli.environment(JTRAVAIL_PAUSE_DURATION="40"):
+            cli("stop")
+            cli("next")
+            cli("next")
+            assert cli("status") == "Paused: 40:00\n"
+
+            cli("stop")
+            cli("next")
+            cli("next")
+            assert cli("status -p 50") == "Paused: 50:00\n"
+            assert cli("status --pause-duration 50") == "Paused: 50:00\n"
