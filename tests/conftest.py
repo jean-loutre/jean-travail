@@ -18,11 +18,12 @@ class Cli:
     def __init__(self, freezer: FrozenDateTimeFactory | StepTickTimeFactory) -> None:
         self._freezer = freezer
 
-    def __call__(self, command: str) -> str:
-        runner = CliRunner()
-        result = runner.invoke(main, split(command))
-        if result.exception is not None:
-            raise result.exception
+    def __call__(self, *commands: str) -> str:
+        for command in commands:
+            runner = CliRunner()
+            result = runner.invoke(main, split(command))
+            if result.exception is not None:
+                raise result.exception
 
         return result.output
 
