@@ -56,6 +56,7 @@ def print_status(
         default=25,
         envvar="JTRAVAIL_WORK_DURATION",
         help=_("Work session duration in minutes"),
+        show_default=True,
     )
     @option(
         "-p",
@@ -65,6 +66,7 @@ def print_status(
         default=5,
         envvar="JTRAVAIL_PAUSE_DURATION",
         help=_("Pause session duration in minutes"),
+        show_default=True,
     )
     def _wrapper(
         pomodoro: Pomodoro,
