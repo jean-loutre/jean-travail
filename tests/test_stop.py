@@ -1,17 +1,9 @@
-from click.testing import CliRunner
-
-from jtravail.cli import main
+from conftest import Cli
 
 
-def test_stop() -> None:
-    runner = CliRunner()
-    result = runner.invoke(main, ["next"])
-    result = runner.invoke(main, ["stop"])
+def test_stop(cli: Cli) -> None:
+    cli("next")
+    assert cli("stop") == "Stopped: 00:00\n"
 
-    assert result.exit_code == 0
-    assert result.output == "Stopped: 00:00\n"
-
-    result = runner.invoke(main, ["stop"])
-
-    assert result.exit_code == 0
-    assert result.output == "Stopped: 00:00\n"
+    # check stopping two times don't crash
+    assert cli("stop") == "Stopped: 00:00\n"
