@@ -1,36 +1,75 @@
+from configparser import ConfigParser
 from functools import wraps
 from gettext import gettext as _
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
-from click import Context
+from appdirs import user_config_dir
+from click import Command, Context, Option
 from click import Path as ClickPath
 from click import echo, group, option, pass_context, pass_obj
+from click.core import ParameterSource  # type: ignore
 
-from jtravail.options import DEFAULT_CONFIG_FILE
 from jtravail.pomodoro import Pomodoro
 
+_APP_NAME = "jean-travail"
+_APP_AUTHOR = "ottorg"
+DEFAULT_CONFIG_FILE = Path(user_config_dir(_APP_NAME, _APP_AUTHOR)) / "config.cfg"
 
-def print_status(command: Callable[[Pomodoro], None]) -> Callable[[Pomodoro], None]:
+
+class ConfigOption(Option):
+    pass
+
+
+class ConfigCommand(Command):
+    def invoke(self, context: Context) -> Any:
+        config_file_path = context.params.get("config", DEFAULT_CONFIG_FILE)
+        config = ConfigParser()
+        config.read(config_file_path)
+        for parameter in self.params:
+            if not isinstance(parameter, ConfigOption):
+                continue
+
+            name = parameter.name
+
+            if context.get_parameter_source(name) != ParameterSource.DEFAULT:  # type: ignore
+                continue
+
+            config_value = config.get("options", name, fallback=None)
+            if config_value is None:
+                continue
+
+            context.params[name] = parameter.type(config_value)
+
+        return super().invoke(context)
+
+
+def print_status(
+    command: Callable[[Pomodoro], None]
+) -> Callable[[Pomodoro, int, int], None]:
     @wraps(command)
     @option(
         "-w",
         "--work-duration",
+        cls=ConfigOption,
         type=int,
-        show_default="25",
+        default=25,
+        envvar="JTRAVAIL_WORK_DURATION",
         help=_("Work session duration in minutes"),
     )
     @option(
         "-p",
         "--pause-duration",
+        cls=ConfigOption,
         type=int,
-        show_default="5",
+        default=5,
+        envvar="JTRAVAIL_PAUSE_DURATION",
         help=_("Pause session duration in minutes"),
     )
     def _wrapper(
         pomodoro: Pomodoro,
-        work_duration: int | None = None,
-        pause_duration: int | None = None,
+        work_duration: int,
+        pause_duration: int,
     ) -> None:
         command(pomodoro)
         if pomodoro.stopped:
@@ -67,14 +106,14 @@ def main(context: Context, config: Path | None = None) -> None:
     context.obj = Pomodoro(config_path=config)
 
 
-@main.command()
+@main.command(cls=ConfigCommand)
 @pass_obj
 @print_status
 def next(pomodoro: Pomodoro) -> None:
     pomodoro.next()
 
 
-@main.command()
+@main.command(cls=ConfigCommand)
 @pass_obj
 @print_status
 def status(pomodoro: Pomodoro) -> None:

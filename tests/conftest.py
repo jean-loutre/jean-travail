@@ -10,8 +10,7 @@ from freezegun.api import FrozenDateTimeFactory, StepTickTimeFactory
 from pyfakefs.fake_filesystem_unittest import Patcher
 from pytest import fixture
 
-from jtravail.cli import main
-from jtravail.options import DEFAULT_CONFIG_FILE
+from jtravail.cli import DEFAULT_CONFIG_FILE, main
 
 
 class Cli:
