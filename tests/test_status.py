@@ -49,3 +49,24 @@ def test_pause_duration_parameter(cli: Cli) -> None:
             cli("stop", "next", "next")
             assert cli("status -p 50") == "Paused: 50:00\n"
             assert cli("status --pause-duration 50") == "Paused: 50:00\n"
+
+
+def test_format_parameter(cli: Cli) -> None:
+    with cli.config(format="From config"):
+        cli("next")
+        assert cli("status") == "From config\n"
+
+        with cli.environment(JTRAVAIL_STATUS_FORMAT="From env"):
+            assert cli("status") == "From env\n"
+            assert cli("status -f 'From command line'") == "From command line\n"
+            assert cli("status --format 'From command line'") == "From command line\n"
+
+
+def test_format_parameter_substitutions(cli: Cli) -> None:
+    assert cli("status -f '{status}'") == "Stopped\n"
+    cli("next")
+    assert cli("status -f '{status}'") == "Working\n"
+    cli("next")
+    assert cli("status -f '{status}'") == "Paused\n"
+
+    assert cli("status -f '{minutes} {seconds} {total_seconds}'") == "5 0 300\n"

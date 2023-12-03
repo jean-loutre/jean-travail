@@ -32,10 +32,10 @@ class ConfigCommand(Command):
 
             name = parameter.name
 
-            if context.get_parameter_source(name) != ParameterSource.DEFAULT:  # type: ignore
+            if context.get_parameter_source(name) is not ParameterSource.DEFAULT:  # type: ignore
                 continue
 
-            config_value = config.get("options", name, fallback=None)
+            config_value = config.get("options", name.strip("_"), fallback=None)
             if config_value is None:
                 continue
 
@@ -46,7 +46,7 @@ class ConfigCommand(Command):
 
 def print_status(
     command: Callable[[Pomodoro], None]
-) -> Callable[[Pomodoro, int, int], None]:
+) -> Callable[[Pomodoro, int, int, str], None]:
     @wraps(command)
     @option(
         "-w",
@@ -68,10 +68,22 @@ def print_status(
         help=_("Pause session duration in minutes"),
         show_default=True,
     )
+    @option(
+        "-f",
+        "--format",
+        "format_",
+        cls=ConfigOption,
+        type=str,
+        default="{status}: {minutes:02d}:{seconds:02d}",
+        envvar="JTRAVAIL_STATUS_FORMAT",
+        help=_("Status output format. See documentation for available variables."),
+        show_default=True,
+    )
     def _wrapper(
         pomodoro: Pomodoro,
         work_duration: int,
         pause_duration: int,
+        format_: str,
     ) -> None:
         command(pomodoro)
         if pomodoro.stopped:
@@ -84,11 +96,17 @@ def print_status(
         remaining_time = pomodoro.get_remaining_time(
             work_duration=work_duration, pause_duration=pause_duration
         )
-        minutes = int(remaining_time.total_seconds() / 60)
-        seconds = abs(int(remaining_time.total_seconds() - 60 * minutes))
+
+        total_seconds = int(remaining_time.total_seconds())
+        minutes = int(total_seconds / 60)
+        seconds = abs(total_seconds - 60 * minutes)
+
         echo(
-            _("{status}: {minutes:02d}:{seconds:02d}").format(
-                status=status_name, minutes=minutes, seconds=seconds
+            format_.format(
+                status=status_name,
+                minutes=minutes,
+                seconds=seconds,
+                total_seconds=total_seconds,
             )
         )
 
