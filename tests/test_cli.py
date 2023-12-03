@@ -119,10 +119,10 @@ def test_work_duration_parameter() -> None:
         assert result.output == "Working: 40:00\n"
 
         runner.invoke(main, ["stop"])
-        result = runner.invoke(main, ["-w", str(50 * 60), "next"])
+        result = runner.invoke(main, ["next", "-w", str(50 * 60)])
         assert result.exit_code == 0
         assert result.output == "Working: 50:00\n"
 
-        result = runner.invoke(main, ["-w", str(50 * 60), "status"])
+        result = runner.invoke(main, ["status", "-w", str(50 * 60)])
         assert result.exit_code == 0
         assert result.output == "Working: 50:00\n"

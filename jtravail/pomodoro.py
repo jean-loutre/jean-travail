@@ -53,19 +53,14 @@ _TRANSITIONS: dict[str, str] = {
 
 
 class Pomodoro:
-    def __init__(
-        self, config_path: Path | None = None, work_duration: int | None = None
-    ) -> None:
-        options = Options(config_path)
+    def __init__(self, config_path: Path | None = None) -> None:
+        self._options = Options(config_path)
 
         self._state_path = _CACHE_DIR / "state"
         self._log_path = _DATA_DIR / "log.db"
 
         self._status = _STOPPED
         self._start_time: datetime | None = None
-        self._work_duration = timedelta(
-            seconds=work_duration or options.get("work_duration", int, 25 * 60)
-        )
         self._pause_duration: timedelta = timedelta(minutes=5)
         self.refresh()
         pass
@@ -82,13 +77,17 @@ class Pomodoro:
     def paused(self) -> bool:
         return self._status == _PAUSED
 
-    @property
-    def remaining(self) -> timedelta:
+    def get_remaining_time(self, work_duration: int | None = None) -> timedelta:
         if self._start_time is None:
             return timedelta(0)
 
         duration = (
-            self._work_duration if self._status == _WORKING else self._pause_duration
+            timedelta(
+                seconds=work_duration
+                or self._options.get("work_duration", int, 25 * 60)
+            )
+            if self._status == _WORKING
+            else self._pause_duration
         )
         return duration - (datetime.now() - self._start_time)
 

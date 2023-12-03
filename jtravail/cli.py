@@ -13,7 +13,14 @@ from jtravail.pomodoro import Pomodoro
 
 def print_status(command: Callable[[Pomodoro], None]) -> Callable[[Pomodoro], None]:
     @wraps(command)
-    def _wrapper(pomodoro: Pomodoro) -> None:
+    @option(
+        "-w",
+        "--work-duration",
+        type=int,
+        show_default="1500 : 25 minutes",
+        help=_("Work session duration in seconds"),
+    )
+    def _wrapper(pomodoro: Pomodoro, work_duration: int | None = None) -> None:
         command(pomodoro)
         if pomodoro.stopped:
             status_name = _("Stopped")
@@ -22,8 +29,9 @@ def print_status(command: Callable[[Pomodoro], None]) -> Callable[[Pomodoro], No
         elif pomodoro.paused:
             status_name = _("Paused")
 
-        minutes = int(pomodoro.remaining.total_seconds() / 60)
-        seconds = abs(int(pomodoro.remaining.total_seconds() - 60 * minutes))
+        remaining_time = pomodoro.get_remaining_time(work_duration=work_duration)
+        minutes = int(remaining_time.total_seconds() / 60)
+        seconds = abs(int(remaining_time.total_seconds() - 60 * minutes))
         echo(
             _("{status}: {minutes:02d}:{seconds:02d}").format(
                 status=status_name, minutes=minutes, seconds=seconds
@@ -42,17 +50,8 @@ def print_status(command: Callable[[Pomodoro], None]) -> Callable[[Pomodoro], No
     show_default=str(DEFAULT_CONFIG_FILE),
     help=_("Path to configuration file"),
 )
-@option(
-    "-w",
-    "--work-duration",
-    type=int,
-    show_default="1500 : 25 minutes",
-    help=_("Work session duration in seconds"),
-)
-def main(
-    context: Context, config: Path | None = None, work_duration: int | None = None
-) -> None:
-    context.obj = Pomodoro(config_path=config, work_duration=work_duration)
+def main(context: Context, config: Path | None = None) -> None:
+    context.obj = Pomodoro(config_path=config)
 
 
 @main.command()
