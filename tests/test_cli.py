@@ -1,9 +1,13 @@
+from contextlib import contextmanager
 from datetime import datetime, timedelta
+from os import environ
+from typing import Iterator
 
 from click.testing import CliRunner
 from freezegun import freeze_time
 
 from jtravail.cli import main
+from jtravail.options import DEFAULT_CONFIG_FILE
 
 
 def test_next() -> None:
@@ -85,14 +89,44 @@ def test_stop() -> None:
         assert result.output == "Stopped: 00:00\n"
 
 
+@contextmanager
+def set_config(**parameters: str) -> Iterator[None]:
+    DEFAULT_CONFIG_FILE.parent.mkdir(exist_ok=True, parents=True)
+    with open(DEFAULT_CONFIG_FILE, "w") as config_file:
+        config_file.write("[options]\n")
+        for key, value in parameters.items():
+            config_file.write(f"{key}={value}\n")
+
+    yield
+
+
 def test_work_duration_parameter() -> None:
+    runner = CliRunner()
     with freeze_time(datetime.now()):
-        runner = CliRunner()
-        result = runner.invoke(main, ["-w", str(30 * 60), "next"])
+        with set_config(work_duration=str(30 * 60)):
+            result = runner.invoke(main, ["next"])
+            assert result.exit_code == 0
+            assert result.output == "Working: 30:00\n"
 
-        assert result.exit_code == 0
-        assert result.output == "Working: 30:00\n"
+            result = runner.invoke(main, ["status"])
+            assert result.exit_code == 0
+            assert result.output == "Working: 30:00\n"
 
-        result = runner.invoke(main, ["-w", str(30 * 60), "status"])
-        assert result.exit_code == 0
-        assert result.output == "Working: 30:00\n"
+            runner.invoke(main, ["stop"])
+            environ["JTRAVAIL_WORK_DURATION"] = str(40 * 60)
+            result = runner.invoke(main, ["next"])
+            assert result.exit_code == 0
+            assert result.output == "Working: 40:00\n"
+
+            result = runner.invoke(main, ["status"])
+            assert result.exit_code == 0
+            assert result.output == "Working: 40:00\n"
+
+            runner.invoke(main, ["stop"])
+            result = runner.invoke(main, ["-w", str(50 * 60), "next"])
+            assert result.exit_code == 0
+            assert result.output == "Working: 50:00\n"
+
+            result = runner.invoke(main, ["-w", str(50 * 60), "status"])
+            assert result.exit_code == 0
+            assert result.output == "Working: 50:00\n"

@@ -1,10 +1,13 @@
-from datetime import timedelta
 from functools import wraps
 from gettext import gettext as _
+from pathlib import Path
 from typing import Callable
 
-from click import Context, echo, group, option, pass_context, pass_obj
+from click import Context
+from click import Path as ClickPath
+from click import echo, group, option, pass_context, pass_obj
 
+from jtravail.options import DEFAULT_CONFIG_FILE
 from jtravail.pomodoro import Pomodoro
 
 
@@ -31,16 +34,25 @@ def print_status(command: Callable[[Pomodoro], None]) -> Callable[[Pomodoro], No
 
 
 @group()
+@pass_context
+@option(
+    "-c",
+    "--config",
+    type=ClickPath(dir_okay=False, exists=True),
+    show_default=str(DEFAULT_CONFIG_FILE),
+    help=_("Path to configuration file"),
+)
 @option(
     "-w",
     "--work-duration",
-    default=25 * 60,
-    show_default=True,
+    type=int,
+    show_default="1500 : 25 minutes",
     help=_("Work session duration in seconds"),
 )
-@pass_context
-def main(context: Context, work_duration: int) -> None:
-    context.obj = Pomodoro(work_duration=timedelta(seconds=work_duration))
+def main(
+    context: Context, config: Path | None = None, work_duration: int | None = None
+) -> None:
+    context.obj = Pomodoro(config_path=config, work_duration=work_duration)
 
 
 @main.command()

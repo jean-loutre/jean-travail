@@ -8,6 +8,8 @@ from typing import Iterable, Iterator
 
 from appdirs import user_cache_dir, user_data_dir
 
+from jtravail.options import Options
+
 _APP_NAME = "jean-travail"
 _APP_AUTHOR = "ottorg"
 _CACHE_DIR = Path(user_cache_dir(_APP_NAME, _APP_AUTHOR))
@@ -51,13 +53,19 @@ _TRANSITIONS: dict[str, str] = {
 
 
 class Pomodoro:
-    def __init__(self, work_duration: timedelta) -> None:
+    def __init__(
+        self, config_path: Path | None = None, work_duration: int | None = None
+    ) -> None:
+        options = Options(config_path)
+
         self._state_path = _CACHE_DIR / "state"
         self._log_path = _DATA_DIR / "log.db"
 
         self._status = _STOPPED
         self._start_time: datetime | None = None
-        self._work_duration = work_duration
+        self._work_duration = timedelta(
+            seconds=work_duration or options.get("work_duration", int, 25 * 60)
+        )
         self._pause_duration: timedelta = timedelta(minutes=5)
         self.refresh()
         pass
