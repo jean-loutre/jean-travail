@@ -37,9 +37,10 @@ class Cli:
             for key, value in parameters.items():
                 config_file.write(f"{key}={value}\n")
 
-        yield
-
-        DEFAULT_CONFIG_FILE.unlink()
+        try:
+            yield
+        finally:
+            DEFAULT_CONFIG_FILE.unlink()
 
     @contextmanager
     def environment(self, **parameters: str) -> Iterator[None]:
@@ -49,14 +50,14 @@ class Cli:
             if old_value is not None:
                 old_environ[key] = old_value
             environ[key] = value
+        try:
+            yield
+        finally:
+            for key in parameters.keys():
+                del environ[key]
 
-        yield
-
-        for key in parameters.keys():
-            del environ[key]
-
-        for key, value in old_environ.items():
-            environ[key] = value
+            for key, value in old_environ.items():
+                environ[key] = value
 
 
 @fixture(autouse=True)
