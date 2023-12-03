@@ -17,8 +17,8 @@ def print_status(command: Callable[[Pomodoro], None]) -> Callable[[Pomodoro], No
         "-w",
         "--work-duration",
         type=int,
-        show_default="1500 : 25 minutes",
-        help=_("Work session duration in seconds"),
+        show_default="25",
+        help=_("Work session duration in minutes"),
     )
     def _wrapper(pomodoro: Pomodoro, work_duration: int | None = None) -> None:
         command(pomodoro)

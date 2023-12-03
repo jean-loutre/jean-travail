@@ -8,15 +8,15 @@ def test_next(cli: Cli) -> None:
 
 
 def test_work_duration_parameter(cli: Cli) -> None:
-    with cli.config(work_duration=str(30 * 60)):
+    with cli.config(work_duration="30"):
         assert cli("next") == "Working: 30:00\n"
 
-        with cli.environment(JTRAVAIL_WORK_DURATION=str(40 * 60)):
+        with cli.environment(JTRAVAIL_WORK_DURATION="40"):
             cli("stop")
             assert cli("next") == "Working: 40:00\n"
 
             cli("stop")
-            assert cli(f"next -w {50*60}") == "Working: 50:00\n"
+            assert cli("next -w 50") == "Working: 50:00\n"
 
             cli("stop")
-            assert cli(f"next --work-duration {50*60}") == "Working: 50:00\n"
+            assert cli("next --work-duration 50") == "Working: 50:00\n"

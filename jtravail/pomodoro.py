@@ -83,8 +83,7 @@ class Pomodoro:
 
         duration = (
             timedelta(
-                seconds=work_duration
-                or self._options.get("work_duration", int, 25 * 60)
+                minutes=work_duration or self._options.get("work_duration", int, 25)
             )
             if self._status == _WORKING
             else self._pause_duration
