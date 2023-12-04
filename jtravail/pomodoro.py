@@ -67,7 +67,7 @@ _TRANSITIONS: dict[str, Callable[[int, int], tuple[str, int]]] = {
 
 
 class Pomodoro:
-    def __init__(self, config_path: Path | None = None) -> None:
+    def __init__(self) -> None:
         self._state_path = DEFAULT_STATE_FILE
         self._log_path = _DATA_DIR / "log.db"
 

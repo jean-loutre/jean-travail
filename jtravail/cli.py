@@ -155,8 +155,8 @@ def print_status(
     show_default=str(DEFAULT_CONFIG_FILE),
     help=_("Path to configuration file"),
 )
-def main(context: Context, config: Path | None = None) -> None:
-    context.obj = Pomodoro(config_path=config)
+def main(context: Context, config: Path) -> None:
+    context.obj = Pomodoro()
 
 
 @main.command(cls=ConfigCommand)
