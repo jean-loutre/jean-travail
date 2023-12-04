@@ -13,7 +13,7 @@ def test_status(cli: Cli) -> None:
     assert cli("status") == "1/4 Work: 23:53\n"
 
     cli.tick(25 * 60)
-    assert cli("status") == "1/4 Work: -1:07\n"
+    assert cli("status") == "1/4 Work: -01:07\n"
 
     cli("next")
     assert cli("status") == "1/4 Pause: 05:00\n"
@@ -22,7 +22,7 @@ def test_status(cli: Cli) -> None:
     assert cli("status") == "1/4 Pause: 03:53\n"
 
     cli.tick(5 * 60)
-    assert cli("status") == "1/4 Pause: -1:07\n"
+    assert cli("status") == "1/4 Pause: -01:07\n"
 
 
 def test_work_duration_parameter(cli: Cli) -> None:
@@ -70,6 +70,18 @@ def test_long_pause_duration_parameter(cli: Cli) -> None:
             _work_to_long_pause()
             assert cli("status -l 50") == "4/4 Long Pause: 50:00\n"
             assert cli("status --long-pause-duration 50") == "4/4 Long Pause: 50:00\n"
+
+
+def test_long_pause_period_parameter(cli: Cli) -> None:
+    with cli.config(long_pause_period="2"):
+        cli("next", "next")
+        assert cli("status") == "1/2 Pause: 05:00\n"
+
+        with cli.environment(JTRAVAIL_LONG_PAUSE_PERIOD="3"):
+            assert cli("status") == "1/3 Pause: 05:00\n"
+
+            assert cli("status -P 5") == "1/5 Pause: 05:00\n"
+            assert cli("status --long-pause-period 5") == "1/5 Pause: 05:00\n"
 
 
 def test_format_parameter(cli: Cli) -> None:

@@ -46,7 +46,7 @@ class ConfigCommand(Command):
 
 def print_status(
     command: Callable[[Pomodoro], None]
-) -> Callable[[Pomodoro, int, int, str], None]:
+) -> Callable[[Pomodoro, int, int, int, int, str], None]:
     @wraps(command)
     @option(
         "-w",
@@ -79,12 +79,22 @@ def print_status(
         show_default=True,
     )
     @option(
+        "-P",
+        "--long-pause-period",
+        cls=ConfigOption,
+        type=int,
+        default=4,
+        envvar="JTRAVAIL_LONG_PAUSE_PERIOD",
+        help=_("Number of work sessions between two long pauses"),
+        show_default=True,
+    )
+    @option(
         "-f",
         "--format",
         "format_",
         cls=ConfigOption,
         type=str,
-        default="{iteration}/{long_pause_period} {status}: {minutes:02d}:{seconds:02d}",
+        default="{iteration}/{long_pause_period} {status}: {remaining_sign}{minutes:02d}:{seconds:02d}",
         envvar="JTRAVAIL_STATUS_FORMAT",
         help=_("Status output format. See documentation for available variables."),
         show_default=True,
@@ -93,9 +103,9 @@ def print_status(
         pomodoro: Pomodoro,
         work_duration: int,
         pause_duration: int,
+        long_pause_period: int,
+        long_pause_duration: int,
         format_: str,
-        long_pause_period: int = 4,
-        long_pause_duration: int = 15,
     ) -> None:
         command(pomodoro)
         if pomodoro.idle:
@@ -116,8 +126,10 @@ def print_status(
         )
 
         total_seconds = int(remaining_time.total_seconds())
+        remaining_sign = "-" if total_seconds < 0 else ""
         minutes = int(total_seconds / 60)
         seconds = abs(total_seconds - 60 * minutes)
+        minutes = abs(minutes)
 
         echo(
             format_.format(
@@ -127,6 +139,7 @@ def print_status(
                 total_seconds=total_seconds,
                 iteration=pomodoro.iteration,
                 long_pause_period=long_pause_period,
+                remaining_sign=remaining_sign,
             )
         )
 
