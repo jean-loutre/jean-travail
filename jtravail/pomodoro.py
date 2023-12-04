@@ -4,7 +4,7 @@ from functools import cached_property
 from json import dumps as json_dumps
 from json import loads as json_loads
 from pathlib import Path
-from typing import Iterable, Iterator
+from typing import Callable, Iterable, Iterator
 
 from appdirs import user_cache_dir, user_data_dir
 
@@ -42,11 +42,19 @@ class LogEntry:
 _IDLE = "idle"
 _WORK = "work"
 _PAUSE = "pause"
+_LONG_PAUSE = "long-pause"
 
-_TRANSITIONS: dict[str, str] = {
-    _IDLE: _WORK,
-    _WORK: _PAUSE,
-    _PAUSE: _WORK,
+_TRANSITIONS: dict[str, Callable[[int, int], tuple[str, int]]] = {
+    _IDLE: lambda _, __: (_WORK, 1),
+    _WORK: lambda iteration, period: (
+        (_PAUSE if iteration % period else _LONG_PAUSE),
+        iteration,
+    ),
+    _PAUSE: lambda iteration, _: (_WORK, iteration + 1),
+    _LONG_PAUSE: lambda iteration, period: (
+        _WORK,
+        iteration + 1 if iteration % period else 1,
+    ),
 }
 
 
@@ -57,6 +65,7 @@ class Pomodoro:
 
         self._status = _IDLE
         self._start_time: datetime | None = None
+        self._iteration = 1
         self.refresh()
         pass
 
@@ -72,19 +81,40 @@ class Pomodoro:
     def pause(self) -> bool:
         return self._status == _PAUSE
 
+    @property
+    def long_pause(self) -> bool:
+        return self._status == _LONG_PAUSE
+
+    @property
+    def iteration(self) -> int:
+        return self._iteration
+
     def get_remaining_time(
-        self, work_duration: int = 25, pause_duration: int = 5
+        self,
+        work_duration: int = 25,
+        pause_duration: int = 5,
+        long_pause_duration: int = 15,
     ) -> timedelta:
         if self._start_time is None:
             return timedelta(0)
 
-        duration = work_duration if self._status == _WORK else pause_duration
+        if self._status == _WORK:
+            duration = work_duration
+        elif self._status == _PAUSE:
+            duration = pause_duration
+        elif self._status == _LONG_PAUSE:
+            duration = long_pause_duration
+        else:
+            assert False
+
         return timedelta(minutes=duration) - (datetime.now() - self._start_time)
 
-    def next(self) -> None:
+    def next(self, long_pause_period: int = 4) -> None:
         if self._status is not _IDLE:
             self._push_log()
-        self._status = _TRANSITIONS[self._status]
+        (self._status, self._iteration) = _TRANSITIONS[self._status](
+            self._iteration, long_pause_period
+        )
         self._start_time = datetime.now()
         self._save()
 
@@ -120,6 +150,7 @@ class Pomodoro:
                 self._start_time = start_time_str and datetime.fromisoformat(
                     start_time_str
                 )
+                self._iteration = int(data.get("iteration", 1))
 
     def _push_log(self) -> None:
         if self._status not in [_WORK, _PAUSE]:
@@ -139,6 +170,7 @@ class Pomodoro:
         data = {
             "status": self._status,
             "start_time": self._start_time and self._start_time.isoformat(),
+            "iteration": self._iteration,
         }
         self._state_path.parent.mkdir(parents=True, exist_ok=True)
         with self._state_path.open("w") as state_file:

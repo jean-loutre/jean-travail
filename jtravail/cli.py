@@ -74,7 +74,7 @@ def print_status(
         "format_",
         cls=ConfigOption,
         type=str,
-        default="{status}: {minutes:02d}:{seconds:02d}",
+        default="{iteration}/{long_pause_period} {status}: {minutes:02d}:{seconds:02d}",
         envvar="JTRAVAIL_STATUS_FORMAT",
         help=_("Status output format. See documentation for available variables."),
         show_default=True,
@@ -84,6 +84,8 @@ def print_status(
         work_duration: int,
         pause_duration: int,
         format_: str,
+        long_pause_period: int = 4,
+        long_pause_duration: int = 15,
     ) -> None:
         command(pomodoro)
         if pomodoro.idle:
@@ -92,9 +94,15 @@ def print_status(
             status_name = _("Work")
         elif pomodoro.pause:
             status_name = _("Pause")
+        elif pomodoro.long_pause:
+            status_name = _("Long Pause")
+        else:
+            assert False
 
         remaining_time = pomodoro.get_remaining_time(
-            work_duration=work_duration, pause_duration=pause_duration
+            work_duration=work_duration,
+            pause_duration=pause_duration,
+            long_pause_duration=long_pause_duration,
         )
 
         total_seconds = int(remaining_time.total_seconds())
@@ -107,6 +115,8 @@ def print_status(
                 minutes=minutes,
                 seconds=seconds,
                 total_seconds=total_seconds,
+                iteration=pomodoro.iteration,
+                long_pause_period=long_pause_period,
             )
         )
 
