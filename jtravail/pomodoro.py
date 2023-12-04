@@ -39,14 +39,14 @@ class LogEntry:
         return self._line.split(sep=";", maxsplit=3)
 
 
-_STOPPED = "stopped"
-_WORKING = "working"
-_PAUSED = "paused"
+_IDLE = "idle"
+_WORK = "work"
+_PAUSE = "pause"
 
 _TRANSITIONS: dict[str, str] = {
-    _STOPPED: _WORKING,
-    _WORKING: _PAUSED,
-    _PAUSED: _WORKING,
+    _IDLE: _WORK,
+    _WORK: _PAUSE,
+    _PAUSE: _WORK,
 }
 
 
@@ -55,22 +55,22 @@ class Pomodoro:
         self._state_path = _CACHE_DIR / "state"
         self._log_path = _DATA_DIR / "log.db"
 
-        self._status = _STOPPED
+        self._status = _IDLE
         self._start_time: datetime | None = None
         self.refresh()
         pass
 
     @property
-    def stopped(self) -> bool:
-        return self._status == _STOPPED
+    def idle(self) -> bool:
+        return self._status == _IDLE
 
     @property
-    def working(self) -> bool:
-        return self._status == _WORKING
+    def work(self) -> bool:
+        return self._status == _WORK
 
     @property
-    def paused(self) -> bool:
-        return self._status == _PAUSED
+    def pause(self) -> bool:
+        return self._status == _PAUSE
 
     def get_remaining_time(
         self, work_duration: int = 25, pause_duration: int = 5
@@ -78,11 +78,11 @@ class Pomodoro:
         if self._start_time is None:
             return timedelta(0)
 
-        duration = work_duration if self._status == _WORKING else pause_duration
+        duration = work_duration if self._status == _WORK else pause_duration
         return timedelta(minutes=duration) - (datetime.now() - self._start_time)
 
     def next(self) -> None:
-        if self._status is not _STOPPED:
+        if self._status is not _IDLE:
             self._push_log()
         self._status = _TRANSITIONS[self._status]
         self._start_time = datetime.now()
@@ -110,19 +110,19 @@ class Pomodoro:
 
     def refresh(self) -> None:
         if not self._state_path.is_file():
-            self._status = _STOPPED
+            self._status = _IDLE
             self._start_time = None
         else:
             with self._state_path.open("r") as state_file:
                 data = json_loads(state_file.read() or "{}")
-                self._status = data.get("status", "stopped")
+                self._status = data.get("status", "idle")
                 start_time_str = data.get("start_time", None)
                 self._start_time = start_time_str and datetime.fromisoformat(
                     start_time_str
                 )
 
     def _push_log(self) -> None:
-        if self._status not in [_WORKING, _PAUSED]:
+        if self._status not in [_WORK, _PAUSE]:
             return
 
         if not self._log_path.exists():

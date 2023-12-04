@@ -86,12 +86,12 @@ def print_status(
         format_: str,
     ) -> None:
         command(pomodoro)
-        if pomodoro.stopped:
-            status_name = _("Stopped")
-        elif pomodoro.working:
-            status_name = _("Working")
-        elif pomodoro.paused:
-            status_name = _("Paused")
+        if pomodoro.idle:
+            status_name = _("Idle")
+        elif pomodoro.work:
+            status_name = _("Work")
+        elif pomodoro.pause:
+            status_name = _("Pause")
 
         remaining_time = pomodoro.get_remaining_time(
             work_duration=work_duration, pause_duration=pause_duration
