@@ -1,5 +1,7 @@
 from conftest import Cli
 
+from jtravail.pomodoro import DEFAULT_STATE_FILE
+
 
 def test_status(cli: Cli) -> None:
     assert cli("status") == "1/4 Idle: 00:00\n"
@@ -93,3 +95,81 @@ def test_format_parameter_substitutions(cli: Cli) -> None:
     assert cli("status -f '{total_seconds}'") == "300\n"
     assert cli("status -f '{iteration}'") == "1\n"
     assert cli("status -f '{long_pause_period}'") == "4\n"
+
+
+def test_state_file_errors(cli: Cli) -> None:
+    DEFAULT_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+    def _write_state(content: str) -> None:
+        with DEFAULT_STATE_FILE.open("w") as state_file:
+            state_file.write(content)
+
+    _write_state("not json")
+    assert cli("status") == (
+        f"Error while loading state file {DEFAULT_STATE_FILE}: "
+        + "Parse error : Expecting value: line 1 column 1 (char 0). "
+        + "State was reset.\n"
+        + "1/4 Idle: 00:00\n"
+    )
+
+    _write_state("[]")
+    assert cli("status") == (
+        f"Error while loading state file {DEFAULT_STATE_FILE}: Unexpected content. State was reset.\n"
+        + "1/4 Idle: 00:00\n"
+    )
+
+    _write_state(
+        """{
+        "status": "unknown_status"
+    }"""
+    )
+    assert cli("status") == (
+        f'Error while loading state file {DEFAULT_STATE_FILE}: Unknown status "unknown_status". '
+        + "State was reset.\n"
+        + "1/4 Idle: 00:00\n"
+    )
+
+    _write_state("""{ "status": "work"}""")
+    assert cli("status") == (
+        f"Error while loading state file {DEFAULT_STATE_FILE}: No start time defined. "
+        + "State was reset.\n"
+        + "1/4 Idle: 00:00\n"
+    )
+
+    _write_state(
+        """{
+        "status": "work",
+        "start_time": "fucked_up_start_time"
+    }"""
+    )
+    assert cli("status") == (
+        f'Error while loading state file {DEFAULT_STATE_FILE}: Invalid start time "fucked_up_start_time". '
+        + "State was reset.\n"
+        + "1/4 Idle: 00:00\n"
+    )
+
+    _write_state(
+        """{
+        "status": "work",
+        "start_time": "2022-01-01"
+    }"""
+    )
+    assert cli("status") == (
+        f"Error while loading state file {DEFAULT_STATE_FILE}: No iteration defined. "
+        + "State was reset.\n"
+        "1/4 Idle: 00:00\n"
+    )
+
+    _write_state(
+        """{
+        "status": "work",
+        "start_time": "2022-01-01",
+        "iteration": "fucked_up_iteration"
+    }"""
+    )
+    assert cli("status") == (
+        f"Error while loading state file {DEFAULT_STATE_FILE}: "
+        + 'Invalid iteration format "fucked_up_iteration". '
+        + "State was reset.\n"
+        + "1/4 Idle: 00:00\n"
+    )

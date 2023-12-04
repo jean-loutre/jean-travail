@@ -1,17 +1,25 @@
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from functools import cached_property
+from gettext import gettext as _
+from json import JSONDecodeError
 from json import dumps as json_dumps
 from json import loads as json_loads
 from pathlib import Path
-from typing import Callable, Iterable, Iterator
+from typing import Any, Callable, Iterable, Iterator
 
 from appdirs import user_cache_dir, user_data_dir
+from click import echo
 
 _APP_NAME = "jean-travail"
 _APP_AUTHOR = "ottorg"
 _CACHE_DIR = Path(user_cache_dir(_APP_NAME, _APP_AUTHOR))
 _DATA_DIR = Path(user_data_dir(_APP_NAME, _APP_AUTHOR))
+DEFAULT_STATE_FILE = _CACHE_DIR / "state"
+
+
+class StateError(Exception):
+    pass
 
 
 class LogEntry:
@@ -60,14 +68,13 @@ _TRANSITIONS: dict[str, Callable[[int, int], tuple[str, int]]] = {
 
 class Pomodoro:
     def __init__(self, config_path: Path | None = None) -> None:
-        self._state_path = _CACHE_DIR / "state"
+        self._state_path = DEFAULT_STATE_FILE
         self._log_path = _DATA_DIR / "log.db"
 
         self._status = _IDLE
         self._start_time: datetime | None = None
         self._iteration = 1
-        self.refresh()
-        pass
+        self._refresh()
 
     @property
     def idle(self) -> bool:
@@ -136,21 +143,60 @@ class Pomodoro:
             self._state_path.unlink()
         except FileNotFoundError:
             pass
-        self.refresh()
+        self._refresh()
 
-    def refresh(self) -> None:
-        if not self._state_path.is_file():
+    def _load_status(self, data: dict[str, Any]) -> None:
+        self._status = data.get("status", _IDLE)
+
+        if self._status not in [_IDLE, _WORK, _PAUSE, _LONG_PAUSE]:
+            raise StateError(_('Unknown status "%s"') % self._status)
+
+    def _load_start_time(self, data: dict[str, Any]) -> None:
+        try:
+            self._start_time = datetime.fromisoformat(data["start_time"])
+        except KeyError:
+            raise StateError(_("No start time defined"))
+        except ValueError:
+            raise StateError(_('Invalid start time "%s"') % data["start_time"])
+
+    def _load_iteration(self, data: dict[str, Any]) -> None:
+        try:
+            self._iteration = int(data["iteration"])
+        except KeyError:
+            raise StateError(_("No iteration defined"))
+        except ValueError:
+            raise StateError(_('Invalid iteration format "%s"') % data["iteration"])
+
+    def _refresh(self) -> None:
+        try:
+            with self._state_path.open("r") as state_file:
+                try:
+                    data = json_loads(state_file.read() or "{}")
+                except JSONDecodeError as ex:
+                    raise StateError(_("Parse error : %s") % ex)
+
+            if not isinstance(data, dict):
+                raise StateError(_("Unexpected content"))
+
+            self._start_time = None
+            self._iteration = 1
+
+            self._load_status(data)
+            if self._status is not _IDLE:
+                self._load_start_time(data)
+                self._load_iteration(data)
+        except FileNotFoundError:
             self._status = _IDLE
             self._start_time = None
-        else:
-            with self._state_path.open("r") as state_file:
-                data = json_loads(state_file.read() or "{}")
-                self._status = data.get("status", "idle")
-                start_time_str = data.get("start_time", None)
-                self._start_time = start_time_str and datetime.fromisoformat(
-                    start_time_str
-                )
-                self._iteration = int(data.get("iteration", 1))
+        except StateError as ex:
+            echo(
+                _("Error while loading state file %s: %s. State was reset.")
+                % (self._state_path, ex),
+                err=True,
+            )
+            self._status = _IDLE
+            self._start_time = None
+            self._iteration = 1
 
     def _push_log(self) -> None:
         if self._status not in [_WORK, _PAUSE]:
