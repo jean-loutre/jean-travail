@@ -65,7 +65,17 @@ def print_status(
         type=int,
         default=5,
         envvar="JTRAVAIL_PAUSE_DURATION",
-        help=_("Pause session duration in minutes"),
+        help=_("Pause duration in minutes"),
+        show_default=True,
+    )
+    @option(
+        "-l",
+        "--long-pause-duration",
+        cls=ConfigOption,
+        type=int,
+        default=15,
+        envvar="JTRAVAIL_LONG_PAUSE_DURATION",
+        help=_("Long pause duration in minutes"),
         show_default=True,
     )
     @option(

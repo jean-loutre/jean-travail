@@ -40,6 +40,27 @@ def test_pause_duration_parameter(cli: Cli) -> None:
             assert cli("next --pause-duration 50") == "1/4 Pause: 50:00\n"
 
 
+def test_long_pause_duration_parameter(cli: Cli) -> None:
+    def _work_to_long_pause() -> None:
+        cli("stop")
+        for _ in range(0, 7):
+            cli("next")
+
+    with cli.config(long_pause_duration="30"):
+        _work_to_long_pause()
+        assert cli("next") == "4/4 Long Pause: 30:00\n"
+
+        with cli.environment(JTRAVAIL_LONG_PAUSE_DURATION="40"):
+            _work_to_long_pause()
+            assert cli("next") == "4/4 Long Pause: 40:00\n"
+
+            _work_to_long_pause()
+            assert cli("next -l 50") == "4/4 Long Pause: 50:00\n"
+
+            _work_to_long_pause()
+            assert cli("next --long-pause-duration 50") == "4/4 Long Pause: 50:00\n"
+
+
 def test_format_parameter(cli: Cli) -> None:
     with cli.config(format="From config"):
         assert cli("next") == "From config\n"
